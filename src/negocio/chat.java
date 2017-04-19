@@ -6,6 +6,7 @@
 package negocio;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -19,16 +20,38 @@ public class chat extends javax.swing.JFrame {
     /**
      * Creates new form chat
      */
-    
     private Socket socket;
-    
+
     private int puerto;
     private String host;
     private String nombre;
     private String contraseña;
-            
+
     public chat() {
+        super("Chat");
+        Login log = new Login(this,true);
+
+        host = log.getHost();
+        nombre = log.getNombre();
+        contraseña = log.getContraseña();
+        puerto = log.getPuerto();
         initComponents();
+        txtareamsg.setEditable(false);
+
+        System.out.println("quieres conectarte a" + host + " en el puerto " + puerto + " con el nombre de ususario: " + nombre + ".");
+
+        try {
+            socket = new Socket(host, puerto);
+            DataOutputStream salidaDatos=new DataOutputStream(socket.getOutputStream());
+            salidaDatos.writeUTF("validar");
+            salidaDatos.writeUTF(nombre);
+            salidaDatos.writeUTF(contraseña);
+        } catch (UnknownHostException ex) {
+            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+        } catch (IOException ex) {
+            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+        }
+        enviarmsg.addActionListener(new ConexionServidor(socket, tfmensaje, nombre, contraseña));
     }
 
     /**
@@ -43,7 +66,7 @@ public class chat extends javax.swing.JFrame {
         tfmensaje = new javax.swing.JTextField();
         enviarmsg = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        txtremessage = new javax.swing.JTextArea();
+        txtareamsg = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -54,9 +77,9 @@ public class chat extends javax.swing.JFrame {
             }
         });
 
-        txtremessage.setColumns(20);
-        txtremessage.setRows(5);
-        jScrollPane2.setViewportView(txtremessage);
+        txtareamsg.setColumns(20);
+        txtareamsg.setRows(5);
+        jScrollPane2.setViewportView(txtareamsg);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -90,30 +113,14 @@ public class chat extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void enviarmsgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enviarmsgActionPerformed
-        Login log = new Login(this);
+
         
-        host = log.getHost();
-        nombre =log.getNombre();
-        contraseña = log.getContraseña();
-        puerto = log.getPuerto();
-        
-        System.out.println("quieres conectarte a" + host + " en el puerto " + puerto + " con el nombre de ususario: " + nombre + ".");
-        
-        try {
-            socket = new Socket (host, puerto);
-        }  catch (UnknownHostException ex) {
-            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
-        } catch (IOException ex) {
-            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
-        }
-        
-        enviarmsg.addActionListener(new ConexionServidor(socket,tfmensaje, nombre, contraseña));
     }//GEN-LAST:event_enviarmsgActionPerformed
 
     /**
      * @param args the command line arguments
      */
-    public void ReceiveMessage(){
+    public void ReceiveMessage() {
         DataInputStream entradaDatos = null;
         String message;
         try {
@@ -124,10 +131,10 @@ public class chat extends javax.swing.JFrame {
             System.err.println("El socket no se creo correctamente. ");
         }
         boolean conectado = true;
-        while(conectado){
+        while (conectado) {
             try {
                 message = entradaDatos.readUTF();
-                txtremessage.append(message + System.lineSeparator());
+                txtareamsg.append(message + System.lineSeparator());
             } catch (IOException ex) {
                 System.err.println("Error al leer del stream de entrada: " + ex.getMessage());
                 conectado = false;
@@ -137,7 +144,7 @@ public class chat extends javax.swing.JFrame {
             }
         }
     }
-    
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -163,19 +170,14 @@ public class chat extends javax.swing.JFrame {
         //</editor-fold>
 
         chat ch = new chat();
+        ch.setVisible(true);
         ch.ReceiveMessage();
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new chat().setVisible(true);
-            }
-        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton enviarmsg;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField tfmensaje;
-    private javax.swing.JTextArea txtremessage;
+    private javax.swing.JTextArea txtareamsg;
     // End of variables declaration//GEN-END:variables
 }
