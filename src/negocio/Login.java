@@ -16,8 +16,19 @@ public class Login extends javax.swing.JFrame {
     /**
      * Creates new form Login
      */
+    
+    private String nombre;
+    private String contraseña;
+    private int puerto;
+    private String host;
+            
+   
     public Login() {
         initComponents();
+    }
+
+    Login(chat aThis) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
@@ -168,8 +179,21 @@ public class Login extends javax.swing.JFrame {
         }
         
         
+        
     }//GEN-LAST:event_jButton1ActionPerformed
 
+     public String getNombre(){
+        return this.txtusuario.getText();
+    }
+    public String getContraseña(){
+        return this.txtpass.getText();
+    }
+    public String getHost(){
+        return this.txthost.getText();
+    }
+    public int getPuerto(){
+        return Integer.parseInt(this.txtpuerto.getText());
+    }
     /**
      * @param args the command line arguments
      */

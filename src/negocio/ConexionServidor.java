@@ -20,15 +20,20 @@ public class ConexionServidor implements ActionListener {
     
     private Socket socket; 
     private JTextField tfMensaje;
-    private String usuario;
+    private String nombre;
+    private String contraseña;
     private DataOutputStream salidaDatos;
     
-    public ConexionServidor(Socket socket, JTextField tfMensaje, String usuario) {
+    public ConexionServidor(Socket socket, JTextField tfMensaje, String nombre, String contraseña) {
         this.socket = socket;
         this.tfMensaje = tfMensaje;
-        this.usuario = usuario;
+        this.nombre = nombre;
+        this.contraseña = contraseña;
         try {
             this.salidaDatos = new DataOutputStream(socket.getOutputStream());
+            salidaDatos.writeUTF("validar");
+            salidaDatos.writeUTF(nombre);
+            salidaDatos.writeUTF(contraseña);
         } catch (IOException ex) {
             System.err.println("Error al crear el stream de salida : " + ex.getMessage());
         } catch (NullPointerException ex) {
@@ -39,7 +44,7 @@ public class ConexionServidor implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            salidaDatos.writeUTF(usuario + ": " + tfMensaje.getText() );
+            salidaDatos.writeUTF(tfMensaje.getText() );
             tfMensaje.setText("");
         } catch (IOException ex) {
             System.err.println("Error al intentar enviar un mensaje: " + ex.getMessage());

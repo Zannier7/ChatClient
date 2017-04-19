@@ -5,6 +5,11 @@
  */
 package negocio;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
 /**
  *
  * @author user
@@ -14,6 +19,14 @@ public class chat extends javax.swing.JFrame {
     /**
      * Creates new form chat
      */
+    
+    private Socket socket;
+    
+    private int puerto;
+    private String host;
+    private String nombre;
+    private String contraseña;
+            
     public chat() {
         initComponents();
     }
@@ -27,50 +40,104 @@ public class chat extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTextPane1 = new javax.swing.JTextPane();
-        jTextField1 = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
+        tfmensaje = new javax.swing.JTextField();
+        enviarmsg = new javax.swing.JButton();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        txtremessage = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jScrollPane1.setViewportView(jTextPane1);
+        enviarmsg.setText("ENVIAR");
+        enviarmsg.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                enviarmsgActionPerformed(evt);
+            }
+        });
 
-        jButton1.setText("ENVIAR");
+        txtremessage.setColumns(20);
+        txtremessage.setRows(5);
+        jScrollPane2.setViewportView(txtremessage);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
-                    .addComponent(jTextField1))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addGap(150, 150, 150)
-                .addComponent(jButton1)
-                .addContainerGap(181, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(128, 128, 128)
+                        .addComponent(enviarmsg, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(45, 45, 45)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 299, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(tfmensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 299, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap(56, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(24, 24, 24)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 341, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(35, 35, 35)
+                .addComponent(tfmensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
-                .addComponent(jButton1)
-                .addGap(36, 36, 36))
+                .addComponent(enviarmsg, javax.swing.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void enviarmsgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enviarmsgActionPerformed
+        Login log = new Login(this);
+        
+        host = log.getHost();
+        nombre =log.getNombre();
+        contraseña = log.getContraseña();
+        puerto = log.getPuerto();
+        
+        System.out.println("quieres conectarte a" + host + " en el puerto " + puerto + " con el nombre de ususario: " + nombre + ".");
+        
+        try {
+            socket = new Socket (host, puerto);
+        }  catch (UnknownHostException ex) {
+            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+        } catch (IOException ex) {
+            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+        }
+        
+        enviarmsg.addActionListener(new ConexionServidor(socket,tfmensaje, nombre, contraseña));
+    }//GEN-LAST:event_enviarmsgActionPerformed
+
     /**
      * @param args the command line arguments
      */
+    public void ReceiveMessage(){
+        DataInputStream entradaDatos = null;
+        String message;
+        try {
+            entradaDatos = new DataInputStream(socket.getInputStream());
+        } catch (IOException ex) {
+            System.err.println("Error al crear el stream de entrada: " + ex.getMessage());
+        } catch (NullPointerException ex) {
+            System.err.println("El socket no se creo correctamente. ");
+        }
+        boolean conectado = true;
+        while(conectado){
+            try {
+                message = entradaDatos.readUTF();
+                txtremessage.append(message + System.lineSeparator());
+            } catch (IOException ex) {
+                System.err.println("Error al leer del stream de entrada: " + ex.getMessage());
+                conectado = false;
+            } catch (NullPointerException ex) {
+                System.err.println("El socket no se creo correctamente. ");
+                conectado = false;
+            }
+        }
+    }
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -95,6 +162,8 @@ public class chat extends javax.swing.JFrame {
         }
         //</editor-fold>
 
+        chat ch = new chat();
+        ch.ReceiveMessage();
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -104,9 +173,9 @@ public class chat extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextPane jTextPane1;
+    private javax.swing.JButton enviarmsg;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTextField tfmensaje;
+    private javax.swing.JTextArea txtremessage;
     // End of variables declaration//GEN-END:variables
 }
