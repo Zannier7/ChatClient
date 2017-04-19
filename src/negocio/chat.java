@@ -26,32 +26,55 @@ public class chat extends javax.swing.JFrame {
     private String host;
     private String nombre;
     private String contraseña;
+    DataOutputStream salidaDatos;
 
     public chat() {
         super("Chat");
-        Login log = new Login(this,true);
+        Login log = new Login(this, true);
 
         host = log.getHost();
         nombre = log.getNombre();
         contraseña = log.getContraseña();
         puerto = log.getPuerto();
         initComponents();
-        txtareamsg.setEditable(false);
+        txtareamsg.setEnabled(false);
 
         System.out.println("quieres conectarte a" + host + " en el puerto " + puerto + " con el nombre de ususario: " + nombre + ".");
 
         try {
             socket = new Socket(host, puerto);
-            DataOutputStream salidaDatos=new DataOutputStream(socket.getOutputStream());
+            salidaDatos = new DataOutputStream(socket.getOutputStream());
             salidaDatos.writeUTF("validar");
             salidaDatos.writeUTF(nombre);
             salidaDatos.writeUTF(contraseña);
-        } catch (UnknownHostException ex) {
-            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
         } catch (IOException ex) {
             System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+            EstablishConnection();
         }
-        enviarmsg.addActionListener(new ConexionServidor(socket, tfmensaje, nombre, contraseña));
+    }
+
+    public void EstablishConnection() {
+        Login log = new Login(this, true);
+
+        host = log.getHost();
+        nombre = log.getNombre();
+        contraseña = log.getContraseña();
+        puerto = log.getPuerto();
+        initComponents();
+        txtareamsg.setEnabled(false);
+
+        System.out.println("quieres conectarte a " + host + " en el puerto " + puerto + " con el nombre de ususario: " + nombre + ".");
+
+        try {
+            socket = new Socket(host, puerto);
+            salidaDatos = new DataOutputStream(socket.getOutputStream());
+            salidaDatos.writeUTF("validar");
+            salidaDatos.writeUTF(nombre);
+            salidaDatos.writeUTF(contraseña);
+        } catch (Exception ex) {
+            System.err.println("No se ha podido conectar con el servidor (" + ex.getMessage() + ").");
+            EstablishConnection();
+        }
     }
 
     /**
@@ -77,8 +100,12 @@ public class chat extends javax.swing.JFrame {
             }
         });
 
+        txtareamsg.setEditable(false);
         txtareamsg.setColumns(20);
+        txtareamsg.setLineWrap(true);
         txtareamsg.setRows(5);
+        txtareamsg.setWrapStyleWord(true);
+        txtareamsg.setDisabledTextColor(new java.awt.Color(0, 0, 0));
         jScrollPane2.setViewportView(txtareamsg);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -113,8 +140,13 @@ public class chat extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void enviarmsgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enviarmsgActionPerformed
+        try {
+            salidaDatos.writeUTF(tfmensaje.getText());
+            tfmensaje.setText("");
+        } catch (IOException ex) {
+            System.err.println("Error al intentar enviar un mensaje: " + ex.getMessage());
+        }
 
-        
     }//GEN-LAST:event_enviarmsgActionPerformed
 
     /**
@@ -134,7 +166,12 @@ public class chat extends javax.swing.JFrame {
         while (conectado) {
             try {
                 message = entradaDatos.readUTF();
-                txtareamsg.append(message + System.lineSeparator());
+                if (message.equals("incorrecto")) {
+                    EstablishConnection();
+                    entradaDatos = new DataInputStream(socket.getInputStream());
+                } else if(!"".equals(message)){
+                    txtareamsg.append(message + System.lineSeparator());
+                }
             } catch (IOException ex) {
                 System.err.println("Error al leer del stream de entrada: " + ex.getMessage());
                 conectado = false;
